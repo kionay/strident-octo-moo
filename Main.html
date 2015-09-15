@@ -11,18 +11,66 @@ $(document).ready(function(){
 		if(e.keyCode==13)
 		$("#recordButton").click();
 	});
+
+	$("#bigTextInput").hide();
+
+	$("#bigInputCheck").click(function(){
+		$("#inputBox").toggle(!this.checked).val("");
+		$("#bigTextInput").toggle(this.checked).val("");
+	});
 });
 
 function record(){
-	window.records.push($("#inputBox").val());
-	$("#listId").append("<li>" + $("#inputBox").val() + "</li>");
-	$("#inputBox").val("")
+	if($("#inputBox").is(":visible")){
+		window.records.push($("#inputBox").val());
+		$("#listId").append("<li>" + $("#inputBox").val() + "</li>");
+		$("#inputBox").val("");
+	}
+	else{
+		var linedInput = $("#bigTextInput").val().split("\n")
+		$.each(linedInput,function(index,value){
+			window.records.push(value);
+			$("#listId").append("<li>" + value + "</li>");
+		});
+		$("#bigTextInput").val("");
+	}
+}
+
+function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+
+function wordFrequency(givenWord){
+	var occurrencesOverall = 0;
+	var occurrencesThisRecord = 0;
+	var matchResults = [];
+	var givenRegex = new RegExp(escapeRegExp(givenWord.toLowerCase()),"g");
+	$.each($(window).attr("records"),function(index,value){
+		matchResults = value.toLowerCase().match(givenRegex) || [];
+		occurrencesThisRecord = matchResults.length;
+		if(occurrencesThisRecord > 0){
+			//givenWord exists in this record, increment
+			occurrencesOverall+=occurrencesThisRecord;
+		}
+	});
+
+	return Math.round((occurrencesOverall / $(window).attr("records").length)*100);
+}
+
+function rankWordFrequency(){
+	$.each($(window).attr("records"),function(index,value){
+		//TODO
+	});
 }
 </script>
 </head>
 <body>
-<input type="text" id="inputBox" placeholder="Enter Text Here."/>
 <input type="button" id="recordButton" value="Record" onclick="record()"/>
+<br>
+Big Input Mode <input type="checkbox" id="bigInputCheck"/>
+<br>
+<input type="text" id="inputBox" placeholder="Enter Text Here."/>
+<textarea rows="10" cols="60" id="bigTextInput" placeholder="Enter Text Here. Input will be seperated line-by-line."></textarea>
 <br>
 <ol id="listId">
 </ol>
