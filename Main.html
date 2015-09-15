@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script type="text/javascript">
+
+$(document).ready(function(){
+	window.records = [];
+	$("#inputBox").keypress(function(e){
+		if(e.keyCode==13)
+		$("#recordButton").click();
+	});
+});
+
+function record(){
+	window.records.push($("#inputBox").val());
+	$("#listId").append("<li>" + $("#inputBox").val() + "</li>");
+	$("#inputBox").val("")
+}
+</script>
+</head>
+<body>
+<input type="text" id="inputBox" placeholder="Enter Text Here."/>
+<input type="button" id="recordButton" value="Record" onclick="record()"/>
+<br>
+<ol id="listId">
+</ol>
+</body>
+</html>
