@@ -21,43 +21,40 @@ $(document).ready(function(){
 });
 
 function record(){
-	if($("#inputBox").is(":visible")){
-		window.records.push($("#inputBox").val());
-		$("#listId").append("<li>" + $("#inputBox").val() + "</li>");
-		$("#inputBox").val("");
-	}
-	else{
-		var linedInput = $("#bigTextInput").val().split("\n")
-		$.each(linedInput,function(index,value){
-			window.records.push(value);
-			$("#listId").append("<li>" + value + "</li>");
-		});
-		$("#bigTextInput").val("");
-	}
-}
 
-function escapeRegExp(str) {
-  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+	var linedInput = $(
+			($("#inputBox").is(":visible")) //if inputBox is visible
+				?	("#inputBox")   //then use inputBox
+				:	("#bigTextInput")//else use bigTextInput (textArea)
+			).val().split("\n");
+
+	$.each(linedInput,function(index,value){ //for each line
+		var splitOnSpace = value.split(" ");
+		$.each(splitOnSpace ,function(wordIndex, wordValue){ //for each word
+			window.records.push(wordValue);
+		});
+		$("#listId").append("<li>" + value + "</li>");
+	});
+	$("#bigTextInput").val("");
+
 }
 
 function wordFrequency(givenWord){
-	var occurrencesOverall = 0;
-	var occurrencesThisRecord = 0;
+	var occurrences = 0;
+
 	var matchResults = [];
-	var givenRegex = new RegExp(escapeRegExp(givenWord.toLowerCase()),"g");
-	$.each($(window).attr("records"),function(index,value){
-		matchResults = value.toLowerCase().match(givenRegex) || [];
-		occurrencesThisRecord = matchResults.length;
-		if(occurrencesThisRecord > 0){
-			//givenWord exists in this record, increment
-			occurrencesOverall+=occurrencesThisRecord;
+
+	$.each($(window).attr("records"),function(index,value){ //for each recorded word
+		if(value.toLowerCase().indexOf(givenWord.toLowerCase()) >= 0){
+			occurrences++;
 		}
 	});
-
-	return Math.round((occurrencesOverall / $(window).attr("records").length)*100);
+	var returnPercentage = (occurrences / $(window).attr("records").length*100).toFixed(2)
+	return returnPercentage + "%"
 }
 
 function rankWordFrequency(){
+	var rankDictionary = [];
 	$.each($(window).attr("records"),function(index,value){
 		//TODO
 	});
