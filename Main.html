@@ -59,6 +59,41 @@ function rankWordFrequency(){
 		//TODO
 	});
 }
+
+/*
+inArrayRecursive finds the first matching record, not all matching records
+this is because this is meant to be used to search a single depth list
+in fact this function's recursive ability probably isn't neccessary
+but who knows i may end up using it in some other code one day
+*/
+
+function inArrayRecursive(ArrayToSearch, SampleArrayItemToSearchFor){ 
+	var foundItem = false;
+	var foundIndexList = [];
+	for(var i = 0; i < ArrayToSearch.length;i++){
+		// for every item in the array, are any of them arrays?
+		if(Array.isArray(ArrayToSearch[i])){
+			var innerArrayResult = inArrayRecursive(ArrayToSearch[i], SampleArrayItemToSearchFor);
+			if(innerArrayResult[0] == true){ //the item is found recursively somewhere
+				foundItem = true;	
+				foundIndexList = innerArrayResult[1];
+				foundIndexList.push(i);
+				return([foundItem,foundIndexList]);
+			}
+		}
+		else{	//item is not an array, check to see if it contains our value
+			if(ArrayToSearch[i] == SampleArrayItemToSearchFor){
+				//found the item
+				foundItem = true;	
+				foundIndexList.push(i);
+				return([foundItem,foundIndexList]);
+			}
+		}
+	}
+	//if we made it here then we were never returned, so we can assume the search didn't find anything
+	return([false]);
+		
+}
 </script>
 </head>
 <body>
