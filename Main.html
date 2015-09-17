@@ -50,13 +50,30 @@ function wordFrequency(givenWord){
 		}
 	});
 	var returnPercentage = (occurrences / $(window).attr("records").length*100).toFixed(2)
-	return returnPercentage + "%"
+	return returnPercentage
+}
+
+function binarySearchArray(searchArray, valuePair){
+	//TODO
 }
 
 function rankWordFrequency(){
 	var rankDictionary = [];
+
+	//rank Dictionary is a list of arrays as value pairs, being a word and that word's frequency
+	//the actual 'rank' is easily obtained from the pair's index in the array, splice and inserting words in the correct place
+	//maintains the index as rank (though -1)
+
 	$.each($(window).attr("records"),function(index,value){
-		//TODO
+		//for each word, does word exist in rankDictionary?
+		if( !inArrayRecursive(rankDictionary, value)[0] ){	//word does not exist in rankDictionary, proceed.
+			var valueFrequency = wordFrequency(value);
+			//we have the frequency, now we must find where in the dictionary to insert it
+
+			var thisPair = [value, valueFrequency];
+			//var result = binarySearchArray(rankDictionary,thisPair);
+			//rankDictionary.splice(result, 0, thisPair);
+		}
 	});
 }
 
