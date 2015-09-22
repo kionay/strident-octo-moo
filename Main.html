@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -49,12 +49,43 @@ function wordFrequency(givenWord){
 			occurrences++;
 		}
 	});
-	var returnPercentage = (occurrences / $(window).attr("records").length*100).toFixed(2)
-	return returnPercentage
+	var returnPercentage = ((occurrences / $(window).attr("records").length*100)||0).toFixed(2)
+	return parseFloat(returnPercentage)
 }
 
 function binarySearchArray(searchArray, valuePair){
-	//TODO
+    //TODO
+    //searchArray is set of items in same format as valuePair
+    //valuePair in format of ["word", frequencyAsFloat]
+
+    var middleIndex = Math.ceil(searchArray.length / 2) - 1;
+    var sizeIndicatesLastStep = (searchArray.length <= 3);
+    var binarySearchRecursedResult = 0;
+    //compare middle index
+    if (searchArray[middleIndex][1] == valuePair[1]) {
+        //found it
+        //this is a problem, since we should NEVER find it
+        //fatal exception (funny that finding something you're searching for in a search function means something went wrong)
+    } else if (searchArray[middleIndex][1] < valuePair[1]) {
+        //item is in second half
+        if (sizeIndicatesLastStep) {
+            //will return something in this function
+        } //if this statement triggers, it will return the function, so we don't need an 'else'
+
+        binarySearchRecursedResult = binarySearchArray(searchArray.slice(middleIndex + 1), valuePair);
+        //now translate recursed index result to actua index and return appropriately
+    } else if (searchArray[middleIndex][1] > valuePair[1]) {
+        //item is in first half
+        if (sizeIndicatesLastStep) {
+            //will return something in this function
+        }
+
+        binarySearchRecursedResult = binarySearchArray(searchArray.slice(0, middleIndex-1), valuePair);
+    } else {
+        //comparisons always return False, improper value somewhere, fatal error
+        //perhaps somehow a NaN or such made it into the rankDictionary
+        //calculation of returnPercentage in wordFrequency should prevent this
+    }
 }
 
 function rankWordFrequency(){
@@ -71,7 +102,7 @@ function rankWordFrequency(){
 			//we have the frequency, now we must find where in the dictionary to insert it
 
 			var thisPair = [value, valueFrequency];
-			//var result = binarySearchArray(rankDictionary,thisPair);
+		    //var result = binarySearchArray(rankDictionary,thisPair);
 			//rankDictionary.splice(result, 0, thisPair);
 		}
 	});
