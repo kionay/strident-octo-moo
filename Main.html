@@ -17,7 +17,42 @@ $(document).ready(function(){
 		$("#inputBox").toggle(!this.checked).val("");
 		$("#bigTextInput").toggle(this.checked).val("");
 	});
+
+	$("#testBox").on('input', function(){
+		onTestBoxInput()
+	});
 });
+
+function onTestBoxInput(){
+	var inList = false;
+	var testWords = $("#testBox").val().toLowerCase().split(" ");
+	var testFrequencies = [];
+	var placeInSortedList = 0;
+	for(var wordIndex = 0; wordIndex < testWords.length; wordIndex++){
+		for(var exIndex = 0; exIndex < excludeList.length; exIndex++){
+			inList = (excludeList[exIndex] == testWords[wordIndex] || inList == true)?(true):(false);
+		}
+		if(!inList){
+			placeInSortedList = wordInFrequencyList(testWords[wordIndex],window.sortedFrequency);
+			if(placeInSortedList >= 0) {
+				testFrequencies.push(window.sortedFrequency[placeInSortedList][1]);
+			}
+		}
+	}
+	var totalFrequency = 0;
+	if(testFrequencies.length > 0){
+		for(var frequencyIndex = 0; frequencyIndex < testFrequencies.length; frequencyIndex++){
+			totalFrequency += testFrequencies[frequencyIndex];
+		}
+	}
+	
+	totalFrequency /= testFrequencies.length
+	if(totalFrequency > 0.01){
+		document.getElementById("testBoxOutput").innerHTML = totalFrequency.toFixed(2) + "%";
+	} else {
+		document.getElementById("testBoxOutput").innerHTML = "00.00%"
+	}
+}
 
 var excludeList = [" ","","\n",".",",","?","!","\"","'","/","\\",":","(",")","[","]","^"]
 
@@ -27,21 +62,43 @@ function record(){
 				?	("#inputBox")   //then use inputBox
 				:	("#bigTextInput")//else use bigTextInput (textArea)
 			).val().split("\n");
-	var inList = false;
+	
 	$.each(linedInput,function(index,value){ //for each line
 		var splitOnSpace = value.split(" ");
 		$.each(splitOnSpace, function (wordIndex, wordValue) { //for each word
-			for(var exIndex = 0; exIndex < excludeList.length; exIndex++){
+			var inList = false;
+			/*for(var exIndex = 0; exIndex < excludeList.length; exIndex++){
 				inList = (excludeList[exIndex] == wordValue || inList == true)?(true):(false);
-			}
+			}*/
 		    	if(!inList){
-		        	window.records.push(wordValue.toLowerCase());
+				/*
+					The next two IF statements exist due to artifacts of IFTTT recording text messages.
+					This is my primary source of input, and many lines will have a trailing or leading useless quote mark.
+					If your input contains quoted texts consider removing them entirely.
+					I suggest this in case the input is, like mine, from text messages as quoted text is not 'from' the person.
+					This would mean that the quoted text may not follow the same pattern as the rest of the input, and could throw the numbers off.
+					By all means remove these and the result may very well be the same.
+				*/
+				if(wordValue.charAt(0) == "\""){
+					wordValue = wordValue.substring(1);
+				}
+				if(wordValue.charAt(wordValue.length-1)=="\""){
+					wordValue = wordValue.substring(0, wordValue.length-1);
+				}
+				window.records.push(wordValue.toLowerCase());
 		    	}
 		});
 		$("#listId").append("<li>" + value + "</li>");
 	});
 	$("#bigTextInput").val("");
+	initiateAfterRecord();
 }
+
+function initiateAfterRecord(){
+	window.rankedFrequency = rankWordFrequencyUnordered(window.records);
+	window.sortedFrequency = mergeSort(rankedFrequency);
+}
+
 function wordFrequency(givenWord){
 	var occurrences = 0;
 	var matchResults = [];
@@ -102,16 +159,17 @@ function merge(leftArray, rightArray){
 	
 }
 
-function rankWordFrequencyUnordered(){
+function rankWordFrequencyUnordered(rankedArray){
 	var unorderedFrequency = [];
 	
-	$.each($(window).attr("records"), function (index, value) {
+	$.each(rankedArray, function (index, value) {
 		//console.log("Processing word \"" + value + "\"");
-		if(wordInFrequencyList(value, unorderedFrequency)>0){
+		if(wordInFrequencyList(value, unorderedFrequency)== -1){
 			//new word, find frequency, add to list
 			unorderedFrequency.push([value,wordFrequency(value)]);
 		}
 	});
+
 	return unorderedFrequency;
 }
 
@@ -136,6 +194,8 @@ Big Input Mode <input type="checkbox" id="bigInputCheck"/>
 <br>
 <input type="text" id="inputBox" placeholder="Enter Text Here."/>
 <textarea rows="10" cols="60" id="bigTextInput" placeholder="Enter Text Here. Input will be seperated line-by-line."></textarea>
+<br><br>
+<input type="text" id="testBox" placeholder="test new text frequency here."/> <label id="testBoxOutput">00.00%</label>
 <br>
 <ol id="listId">
 </ol>
