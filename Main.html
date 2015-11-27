@@ -1,10 +1,9 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script type="text/javascript">
-
 $(document).ready(function(){
 	window.records = [];
 	$("#inputBox").keypress(function(e){
@@ -13,41 +12,39 @@ $(document).ready(function(){
 	        $("#inputBox,#bigTextInput").val("");
 	    }
 	});
-
 	$("#bigTextInput").hide();
-
 	$("#bigInputCheck").click(function(){
 		$("#inputBox").toggle(!this.checked).val("");
 		$("#bigTextInput").toggle(this.checked).val("");
 	});
 });
 
-function record(){
+var excludeList = [" ","","\n",".",",","?","!","\"","'","/","\\",":","(",")","[","]","^"]
 
+function record(){
 	var linedInput = $(
 			($("#inputBox").is(":visible")) //if inputBox is visible
 				?	("#inputBox")   //then use inputBox
 				:	("#bigTextInput")//else use bigTextInput (textArea)
 			).val().split("\n");
-
+	var inList = false;
 	$.each(linedInput,function(index,value){ //for each line
 		var splitOnSpace = value.split(" ");
 		$.each(splitOnSpace, function (wordIndex, wordValue) { //for each word
-		    if(wordValue !== " " && wordValue !== "" && wordValue !== "\n"){
-		        window.records.push(wordValue);
-		    }
+			for(var exIndex = 0; exIndex < excludeList.length; exIndex++){
+				inList = (excludeList[exIndex] == wordValue || inList == true)?(true):(false);
+			}
+		    	if(!inList){
+		        	window.records.push(wordValue.toLowerCase());
+		    	}
 		});
 		$("#listId").append("<li>" + value + "</li>");
 	});
 	$("#bigTextInput").val("");
-
 }
-
 function wordFrequency(givenWord){
 	var occurrences = 0;
-
 	var matchResults = [];
-
 	$.each($(window).attr("records"),function(index,value){ //for each recorded word
 		if(value.toLowerCase().indexOf(givenWord.toLowerCase()) >= 0){
 			occurrences++;
@@ -57,118 +54,79 @@ function wordFrequency(givenWord){
 	return parseFloat(returnPercentage)
 }
 
-function binarySearchArray(searchArray, valuePair){
-    //TODO
-    //searchArray is set of items in same format as valuePair
-    //valuePair in format of ["word", frequencyAsFloat]
+function mergeSort(inArray){
+	if(inArray.length<=1) return inArray;
+	
+	var leftArray = [];
+	var rightArray = [];
+	var midPoint = inArray.length / 2;
+	
+	//populate left and right arrays
+	for(var item = 0; item < inArray.length; item++){
+		if(item < midPoint){ leftArray.push(inArray[item]); }
+		else { rightArray.push(inArray[item]); }
+	}
 
-    if (searchArray.length == 0) { return 0;}
+	//sort each smaller list
+	leftArray = mergeSort(leftArray);
+	rightArray = mergeSort(rightArray);
 
-    var middleIndex = Math.ceil(searchArray.length / 2) - 1;
-
-    var binarySearchRecursedResult = 0;
-    //compare middle index
-    if (searchArray[middleIndex][1] == valuePair[1]) {
-        //found it
-        //this is a problem, since we should NEVER find it
-        //fatal exception (funny that finding something you're searching for in a search function means something went wrong)
-    } else if (searchArray[middleIndex][1] < valuePair[1]) {
-        //item is in top/greater/lower index half
-        if (searchArray.length == 1) {
-            //will return something in this function, size is 3 2 or 1
-            //if array contains 1 item [["word",5]]. 5 < our valuepair item, our item is greater, it goes higher in list (lower in index)
-            //we return that it should have a lower index than [["word",5]]
-            //we return 0 so that splice(0,0,value) puts value as the 0th index
-            return 0;
-        }
-
-        binarySearchRecursedResult = binarySearchArray(searchArray.slice(middleIndex + 1), valuePair);
-        //now translate recursed index result to actual index and return appropriately
-        //if we're at a lower index, the returned number WILL be between 0 and our middle index, if it's our middile index then its index was 1 less than the middle
-        //since the numbers returning are to be used with splice, we're actually returning the indexes that
-        //the number will end up being (returning 0 will end up being our item has a higher frequency than all other items)
-        return binarySearchRecursedResult;
-    } else if (searchArray[middleIndex][1] > valuePair[1]) {
-        //item is in the bottom/lesser/greater index half
-        if (searchArray.length == 1) {
-            return 1;
-        }
-
-        binarySearchRecursedResult = binarySearchArray(searchArray.slice(0, middleIndex - 1), valuePair);
-        //it's THIS 'if statement', where what is returned has to be modified based on the other half
-        //returned number is added to the number of items from 0 to middle index
-        //we still the number we return to be an index
-        //the index of middleIndex + 1 is returning 0 here
-        //does returning 0 determine this is the new middle index if i'm rounding to the bottom half middle for even numbered idecies?
-        //no, it shifts the items away from the middle, so we return middleIndex  + 1
-        return (middleIndex + 1 + binarySearchRecursedResult);
-    } else {
-        //comparisons always return False, improper value somewhere, fatal error
-        //perhaps somehow a NaN or such made it into the rankDictionary
-        //calculation of returnPercentage in wordFrequency should prevent this
-    }
+	//combine(merge) smaller sorted lists
+	return merge(leftArray, rightArray);
 }
 
+function merge(leftArray, rightArray){
+	var mergedArray = [];
 
-function rankWordFrequency(){
-	var rankDictionary = [];
-
-	//rank Dictionary is a list of arrays as value pairs, being a word and that word's frequency
-	//the actual 'rank' is easily obtained from the pair's index in the array, splice and inserting words in the correct place
-	//maintains the index as rank (though -1)
-
-	$.each($(window).attr("records"), function (index, value) {
-	    console.log("Processing word \"" + value + "\"");
-		//for each word, does word exist in rankDictionary?
-		if( !inArrayRecursive(rankDictionary, value)[0] ){	//word does not exist in rankDictionary, proceed.
-		    var valueFrequency = wordFrequency(value);
-		    console.log("word \"" + value + "\" occurs " + valueFrequency + "% of the time.");
-			//we have the frequency, now we must find where in the dictionary to insert it
-
-			var thisPair = [value, valueFrequency];
-			var result = binarySearchArray(rankDictionary, thisPair);
-			console.log("Result: " + result);
-
-			rankDictionary.splice(result, 0, thisPair);
-		}
-	});
-	return rankDictionary;
-}
-
-/*
-inArrayRecursive finds the first matching record, not all matching records
-this is because this is meant to be used to search a single depth list
-in fact this function's recursive ability probably isn't neccessary
-but who knows i may end up using it in some other code one day
-*/
-
-function inArrayRecursive(ArrayToSearch, SampleArrayItemToSearchFor){ 
-	var foundItem = false;
-	var foundIndexList = [];
-
-	for(var i = 0; i < ArrayToSearch.length;i++){
-	    // for every item in the array, are any of them arrays?
-	    if (Array.isArray(ArrayToSearch[i])) {
-			var innerArrayResult = inArrayRecursive(ArrayToSearch[i], SampleArrayItemToSearchFor);
-			if(innerArrayResult[0] == true){ //the item is found recursively somewhere
-			    foundItem = true;
-				foundIndexList = innerArrayResult[1];
-				foundIndexList.push(i);
-				return([foundItem,foundIndexList]);
-			}
-		}
-	    else {	//item is not an array, check to see if it contains our value
-	        if (ArrayToSearch[0] == SampleArrayItemToSearchFor[0]) {
-	            //found the item
-				foundItem = true;	
-				foundIndexList.push(i);
-				return([foundItem,foundIndexList]);
-			}
+	while(leftArray.length != 0 && rightArray.length != 0)
+	{
+		if(leftArray[0][1] <= rightArray[0][1]){ 
+			mergedArray.push(leftArray[0]);
+			leftArray.shift();
+		} else {
+			mergedArray.push(rightArray[0]);
+			rightArray.shift();
 		}
 	}
-	//if we made it here then we were never returned, so we can assume the search didn't find anything
-	return([false]);	
+
+	while(leftArray.length != 0){
+		mergedArray.push(leftArray[0]);
+		leftArray.shift();
+	}
+	while(rightArray.length != 0){
+		mergedArray.push(rightArray[0]);
+		rightArray.shift();
+	}
+
+	return mergedArray;
+	
 }
+
+function rankWordFrequencyUnordered(){
+	var unorderedFrequency = [];
+	
+	$.each($(window).attr("records"), function (index, value) {
+		//console.log("Processing word \"" + value + "\"");
+		if(wordInFrequencyList(value, unorderedFrequency)>0){
+			//new word, find frequency, add to list
+			unorderedFrequency.push([value,wordFrequency(value)]);
+		}
+	});
+	return unorderedFrequency;
+}
+
+
+function wordInFrequencyList(word, list){
+	for(var index = 0; index < list.length; index++){
+		if(list[index][0] == word.replace(new RegExp((word[0]==":")?('[,?.!"]'):('[,?.!)"(]'), 'g'))) return index;
+	}
+	return -1;
+}
+
+function jQueryInArray(ArrayToSearch, SampleArrayItemToSearchFor){
+	return $.inArray(SampleArrayItemToSearchFor.replace(new RegExp('[,?.!)(]', 'g'), ''), ArrayToSearch);
+}
+
 </script>
 </head>
 <body>
