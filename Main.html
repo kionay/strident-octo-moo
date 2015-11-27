@@ -95,8 +95,8 @@ function record(){
 }
 
 function initiateAfterRecord(){
-	//window.rankedFrequency = rankWordFrequencyUnordered(window.records);
-	//window.sortedFrequency = mergeSort(rankedFrequency);
+	window.rankedFrequency = rankWordFrequencyUnordered(window.records);
+	window.sortedFrequency = mergeSort(rankedFrequency);
 }
 
 function wordFrequency(givenWord){
@@ -110,7 +110,7 @@ function wordFrequency(givenWord){
 		}
 	});
 	
-	var returnPercentage = ((r / $(window).attr("records").length*100)||0).toFixed(2)
+	var returnPercentage = ((occurrences / $(window).attr("records").length*100)||0).toFixed(2)
 	return parseFloat(returnPercentage)
 }
 
