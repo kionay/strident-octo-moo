@@ -5,6 +5,7 @@
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function(){
+	loadStopWords();
 	window.records = [];
 	$("#inputBox").keypress(function(e){
 	    if(e.keyCode==13){
@@ -23,14 +24,46 @@ $(document).ready(function(){
 	}, 500);
 });
 
+function loadStopWords(){
+	$.ajax({
+		url: "stopwords.jsonp",
+		dataType: "jsonp",
+		jsonpCallback: "getStopWords",
+		success: function(data){
+			window.stopwords = data.stopwords;
+		},
+		error: function(jqXHR, textStatus, errorThrown){
+			console.log("jqXHR: " + jqXHR);
+			console.log("textStatus: " + textStatus);
+			console.log("error: " + errorThrown);
+		}
+	});
+}
+
+function wordIsEmoticon(word){
+	//first handle special cases
+	if(word == "xd" || word == "x3") {return true;}
+
+	//word is emoticon if >50% of the word is made up of special characters
+	var specialCharacters = word.replace(/[^a-z0-9]/gmi, "");
+	return ((specialCharacters.length / word.length)*100 <= 50)?(true):(false)
+
+}
+
 function onTestBoxInput(){
 	var inList = false;
-	var testWords = $("#testBox").val().toLowerCase().split(" ");
+	var inputBeforeSplit = $("#testBox").val().toLowerCase()
+	var testWords = inputBeforeSplit.split(" ");
 	var testFrequencies = [];
 	var placeInSortedList = 0;
 	for(var wordIndex = 0; wordIndex < testWords.length; wordIndex++){
 		for(var exIndex = 0; exIndex < excludeList.length; exIndex++){
 			inList = (excludeList[exIndex] == testWords[wordIndex] || inList == true)?(true):(false);
+		}
+		if(wordIsEmoticon(testWords[wordIndex])){
+			//this word is an emoticon, denoting emotion
+			//remove this from phrase commonness
+			inList = true;
 		}
 		if(!inList){
 			placeInSortedList = wordInFrequencyList(testWords[wordIndex],window.sortedFrequency);
@@ -38,6 +71,10 @@ function onTestBoxInput(){
 				testFrequencies.push(window.sortedFrequency[placeInSortedList][1]);
 			}
 		}
+	}
+	if(inputBeforeSplit.indexOf("?") > -1){
+		//asking a question means phrase commonness should drop significantly
+		testFrequencies.push(0.01);
 	}
 	var totalFrequency = 0;
 	if(testFrequencies.length > 0){
@@ -52,6 +89,7 @@ function onTestBoxInput(){
 	} else {
 		document.getElementById("testBoxOutput").innerHTML = "00.00%"
 	}
+
 }
 
 var excludeList = [" ","","\n",".",",","?","!","\"","'","/","\\",":","(",")","[","]","^"]
@@ -85,13 +123,26 @@ function record(){
 				if(wordValue.charAt(wordValue.length-1)=="\""){
 					wordValue = wordValue.substring(0, wordValue.length-1);
 				}
-				window.records.push(wordValue.toLowerCase());
+				if(	wordValue.charAt(wordValue.length-1)=="?" || 
+					wordValue.charAt(wordValue.length-1)=="." || 
+					wordValue.charAt(wordValue.length-1)=="!"){
+
+					wordValue = wordValue.substring(0, wordValue.length-1);
+				}
+				if(!valueIsStopWord(wordValue.toLowerCase())) window.records.push(wordValue.toLowerCase());
 		    	}
 		});
 		$("#listId").append("<li>" + value + "</li>");
 	});
 	$("#bigTextInput").val("");
 	initiateAfterRecord();
+}
+
+function valueIsStopWord(value){
+	for(var stopIndex = 0; stopIndex < window.stopwords.length; stopIndex++){
+		if(value == window.stopwords[stopIndex][stopIndex]) return true;
+	}
+	return false;
 }
 
 function initiateAfterRecord(){
@@ -105,7 +156,7 @@ function wordFrequency(givenWord){
 	//console.log("word frequency for " + givenWord);
 
 	$.each($(window).attr("records"),function(index,value){ //for each recorded word
-		if(value.toLowerCase().indexOf(givenWord.toLowerCase()) >= 0){
+		if(value.toLowerCase() == givenWord.toLowerCase()){
 			occurrences++;
 		}
 	});
