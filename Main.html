@@ -105,9 +105,9 @@ function record(){
 		var splitOnSpace = value.split(" ");
 		$.each(splitOnSpace, function (wordIndex, wordValue) { //for each word
 			var inList = false;
-			/*for(var exIndex = 0; exIndex < excludeList.length; exIndex++){
+			for(var exIndex = 0; exIndex < excludeList.length; exIndex++){
 				inList = (excludeList[exIndex] == wordValue || inList == true)?(true):(false);
-			}*/
+			}
 		    	if(!inList){
 				/*
 					The next two IF statements exist due to artifacts of IFTTT recording text messages.
@@ -146,22 +146,39 @@ function valueIsStopWord(value){
 }
 
 function initiateAfterRecord(){
-	window.rankedFrequency = rankWordFrequencyUnordered(window.records);
+	window.runsize = window.records.length;
+	window.recordsCopy = window.records.slice();
+	var startTime = new Date();
+	window.rankedFrequency = rankWordFrequencyUnordered(window.recordsCopy);
+	var endTime = new Date();
+	console.log("rank runtime: " + (endTime - startTime));
 	window.sortedFrequency = mergeSort(rankedFrequency);
 }
 
+function regexFilter(word)
+{
+	return word.replace(new RegExp((word[0]==":")?('[,?.!"]'):('[,?.!)"(]'), 'g'),"");
+}
+
 function wordFrequency(givenWord){
+	if(givenWord == "") {console.log("blank sent to word frequency");}
 	var occurrences = 0;
 	var matchResults = [];
-	//console.log("word frequency for " + givenWord);
+	var matchIndecies = [];
 
-	$.each($(window).attr("records"),function(index,value){ //for each recorded word
-		if(value.toLowerCase() == givenWord.toLowerCase()){
+	$.each(window.recordsCopy,function(index,value){ //for each recorded word
+		if(regexFilter(value.toLowerCase()) == regexFilter(givenWord.toLowerCase())){ //try to compare words without extra characters
 			occurrences++;
+			matchIndecies.push(index);
 		}
 	});
+
+	//remove other items, each next word runs faster
+	for(var removeIndex = 0; removeIndex < matchIndecies.length; removeIndex++){
+		window.recordsCopy.splice(matchIndecies[removeIndex]-removeIndex,1);
+	}
 	
-	var returnPercentage = ((occurrences / $(window).attr("records").length*100)||0).toFixed(2)
+	var returnPercentage = ((occurrences / window.runsize*100)||0).toFixed(2)
 	return parseFloat(returnPercentage)
 }
 
@@ -215,14 +232,15 @@ function merge(leftArray, rightArray){
 
 function rankWordFrequencyUnordered(rankedArray){
 	var unorderedFrequency = [];
-	
-	$.each(rankedArray, function (index, value) {
-		//console.log("Processing word \"" + value + "\"");
-		if(wordInFrequencyList(value,unorderedFrequency)== -1){
-			//new word, find frequency, add to list
-			unorderedFrequency.push([value,wordFrequency(value)]);
-		}
-	});
+
+	while(window.recordsCopy.length > 0){//get top item
+		var topItem = window.recordsCopy[0];
+		if(topItem == "") {console.log("working word is blank");}
+		//work item & remove item from list of items
+		var currentFrequency = wordFrequency(topItem);
+		//there should never be a frequency of 0
+		unorderedFrequency.push([topItem,currentFrequency]);
+	}
 
 	return unorderedFrequency;
 }
